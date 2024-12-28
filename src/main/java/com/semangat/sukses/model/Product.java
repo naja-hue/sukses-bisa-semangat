@@ -1,61 +1,58 @@
 package com.semangat.sukses.model;
 
-import javax.persistence.Entity;
-import javax.persistence.Id;
+import javax.persistence.*;
 
 @Entity
+@Table(name = "product")
 public class Product {
+
+    @ManyToOne
+    @JoinColumn(name = "id_admin", nullable = false)
+    private Admin admin;  // Relasi dengan Admin
+
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(name = "name")
     private String name;
-    private String price;
-    private String image;  // Menyimpan URL gambar
+
+    @Column(name = "description")
     private String description;
+
+    @Column(name = "price")
+    private double price;
+
+    @Column(name = "stock")
     private int stock;
 
-    // Constructor
-    public Product(Long id, String name, String price, String image, String description, int stock) {
+
+    // Konstruktor dengan parameter
+    public Product(Long id, Admin admin, String name, double price, String description, int stock) {
         this.id = id;
+        this.admin = admin;
         this.name = name;
         this.price = price;
-        this.image = image;
         this.description = description;
         this.stock = stock;
     }
 
-    // Getter and Setter
-    public Long getId() {
-        return id;
+
+    public Product() {
+
     }
 
-    public void setId(Long id) {
-        this.id = id;
+
+
+    public Admin getAdmin() {
+        return admin;
     }
 
-    public String getName() {
-        return name;
+    public void setAdmin(Admin admin) {
+        this.admin = admin;
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getPrice() {
-        return price;
-    }
-
-    public void setPrice(String price) {
-        this.price = price;
-    }
-
-    public String getImage() {
-        return image;
-    }
-
-    public void setImage(String image) {
-        this.image = image;
-    }
-
+    // Getter dan Setter untuk description
     public String getDescription() {
         return description;
     }
@@ -64,6 +61,34 @@ public class Product {
         this.description = description;
     }
 
+    // Getter dan Setter untuk price
+    public double getPrice() {
+        return price;
+    }
+
+    public void setPrice(double price) {
+        this.price = price;
+    }
+
+    // Getter dan Setter untuk id
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    // Getter dan Setter untuk name
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    // Getter dan Setter untuk stock
     public int getStock() {
         return stock;
     }

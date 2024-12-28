@@ -1,30 +1,49 @@
 package com.semangat.sukses.DTO;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class ProductDTO {
+
     private Long id;
+    private Long admin;  // Gantilah 'admin' menjadi 'adminId'
     private String name;
-    private String price;
-    private String image;  // Gambar produk (URL)
+    private double price;
     private String description;
     private int stock;
 
-    // Constructor
-    public ProductDTO(Long id, String name, String price, String image, String description, int stock) {
+    // Konstruktor dengan parameter menggunakan @JsonCreator dan @JsonProperty
+    @JsonCreator
+    public ProductDTO(
+            @JsonProperty("id") Long id,
+            @JsonProperty("admin") Long admin,
+            @JsonProperty("name") String name,
+            @JsonProperty("price") double price,
+            @JsonProperty("description") String description,
+            @JsonProperty("stock") int stock) {
         this.id = id;
+        this.admin = admin;
         this.name = name;
         this.price = price;
-        this.image = image;
         this.description = description;
         this.stock = stock;
     }
 
-    // Getter and Setter
+    // Getter dan Setter untuk semua field
     public Long getId() {
         return id;
     }
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public Long getAdmin() {
+        return admin;
+    }
+
+    public void setAdmin(Long admin) {
+        this.admin = admin;
     }
 
     public String getName() {
@@ -35,20 +54,12 @@ public class ProductDTO {
         this.name = name;
     }
 
-    public String getPrice() {
+    public double getPrice() {
         return price;
     }
 
-    public void setPrice(String price) {
+    public void setPrice(double price) {
         this.price = price;
-    }
-
-    public String getImage() {
-        return image;
-    }
-
-    public void setImage(String image) {
-        this.image = image;
     }
 
     public String getDescription() {
