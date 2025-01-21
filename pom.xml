@@ -11,8 +11,8 @@
 	<groupId>com.example</groupId>
 	<artifactId>belajar-springboot</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>toko-boneka</name>
-	<description>toko boneka</description>
+	<name>toko-sukses</name>
+	<description>toko sukses</description>
 	<properties>
 		<java.version>17</java.version>
 	</properties>
@@ -53,9 +53,21 @@
 		</dependency>
 
 		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-websocket</artifactId>
+		</dependency>
+
+
+		<dependency>
 			<groupId>io.jsonwebtoken</groupId>
 			<artifactId>jjwt</artifactId>
 			<version>0.9.1</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.json</groupId>
+			<artifactId>json</artifactId>
+			<version>20210307</version>
 		</dependency>
 
 

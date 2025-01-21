@@ -6,13 +6,13 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class ProductDTO {
 
     private Long id;
-    private Long admin;  // Gantilah 'admin' menjadi 'adminId'
+    private Long admin;
     private String name;
     private double price;
     private String description;
     private int stock;
+    private String imageURL;
 
-    // Konstruktor dengan parameter menggunakan @JsonCreator dan @JsonProperty
     @JsonCreator
     public ProductDTO(
             @JsonProperty("id") Long id,
@@ -20,16 +20,17 @@ public class ProductDTO {
             @JsonProperty("name") String name,
             @JsonProperty("price") double price,
             @JsonProperty("description") String description,
-            @JsonProperty("stock") int stock) {
+            @JsonProperty("stock") int stock,
+            @JsonProperty("imageURL") String imageURL) {
         this.id = id;
         this.admin = admin;
         this.name = name;
         this.price = price;
         this.description = description;
         this.stock = stock;
+        this.imageURL = imageURL;
     }
 
-    // Getter dan Setter untuk semua field
     public Long getId() {
         return id;
     }
@@ -76,5 +77,13 @@ public class ProductDTO {
 
     public void setStock(int stock) {
         this.stock = stock;
+    }
+
+    public String getImageURL() {
+        return imageURL;
+    }
+
+    public void setImageURL(String imageURL) {
+        this.imageURL = imageURL;
     }
 }

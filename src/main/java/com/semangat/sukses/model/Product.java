@@ -6,13 +6,13 @@ import javax.persistence.*;
 @Table(name = "product")
 public class Product {
 
-    @ManyToOne
-    @JoinColumn(name = "id_admin", nullable = false)
-    private Admin admin;  // Relasi dengan Admin
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @ManyToOne
+    @JoinColumn(name = "id_admin", nullable = false)
+    private Admin admin;
 
     @Column(name = "name")
     private String name;
@@ -26,23 +26,28 @@ public class Product {
     @Column(name = "stock")
     private int stock;
 
+    @Column(name = "image_url")
+    private String imageURL;
 
-    // Konstruktor dengan parameter
-    public Product(Long id, Admin admin, String name, double price, String description, int stock) {
+    public Product() {}
+
+    public Product(Long id, Admin admin, String name, double price, String description, int stock, String imageURL) {
         this.id = id;
         this.admin = admin;
         this.name = name;
         this.price = price;
         this.description = description;
         this.stock = stock;
+        this.imageURL = imageURL;
     }
 
-
-    public Product() {
-
+    public Long getId() {
+        return id;
     }
 
-
+    public void setId(Long id) {
+        this.id = id;
+    }
 
     public Admin getAdmin() {
         return admin;
@@ -52,34 +57,6 @@ public class Product {
         this.admin = admin;
     }
 
-    // Getter dan Setter untuk description
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    // Getter dan Setter untuk price
-    public double getPrice() {
-        return price;
-    }
-
-    public void setPrice(double price) {
-        this.price = price;
-    }
-
-    // Getter dan Setter untuk id
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    // Getter dan Setter untuk name
     public String getName() {
         return name;
     }
@@ -88,12 +65,35 @@ public class Product {
         this.name = name;
     }
 
-    // Getter dan Setter untuk stock
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public double getPrice() {
+        return price;
+    }
+
+    public void setPrice(double price) {
+        this.price = price;
+    }
+
     public int getStock() {
         return stock;
     }
 
     public void setStock(int stock) {
         this.stock = stock;
+    }
+
+    public String getImageURL() {
+        return imageURL;
+    }
+
+    public void setImageURL(String imageURL) {
+        this.imageURL = imageURL;
     }
 }

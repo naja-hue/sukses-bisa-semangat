@@ -1,11 +1,17 @@
 package com.semangat.sukses.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.semangat.sukses.DTO.ProductDTO;
 import com.semangat.sukses.service.ProductService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.client.RestTemplate;
+import org.json.JSONObject; nn   
 
 import java.io.IOException;
 import java.util.List;
@@ -21,7 +27,7 @@ public class ProductController {
 
     @GetMapping
     public List<ProductDTO> getAllProducts() {
-        return productService.getAllProducts();  // Mengembalikan List<ProductDTO>
+        return productService.getAllProducts();
     }
 
     @GetMapping("/{id}")
@@ -38,12 +44,17 @@ public class ProductController {
     }
 
     @PostMapping("/add/{idAdmin}")
-    public ResponseEntity<ProductDTO> addProduct(@PathVariable Long idAdmin, @RequestBody ProductDTO productDTO) {
+    public ResponseEntity<ProductDTO> addProduct(
+            @PathVariable Long idAdmin,
+            @RequestParam("productDTO") String productDTOJson,
+            @RequestParam("file") MultipartFile file) {
         try {
-            // Menetapkan adminId dari URL ke ProductDTO sebelum menyimpannya
-            productDTO.setAdmin(idAdmin); // Set admin dari path ke DTO
+            ObjectMapper objectMapper = new ObjectMapper();
+            ProductDTO productDTO = objectMapper.readValue(productDTOJson, ProductDTO.class);
 
-            // Mengirimkan productDTO dengan ID admin ke service untuk disimpan
+            String fileUrl = uploadFoto(file);
+            productDTO.setImageURL(fileUrl);
+
             ProductDTO savedProduct = productService.addProduct(idAdmin, productDTO);
             return new ResponseEntity<>(savedProduct, HttpStatus.CREATED);
         } catch (Exception e) {
@@ -51,17 +62,34 @@ public class ProductController {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
-    @PutMapping(value = "/edit/{id}")
+
+    @PutMapping("/edit/{id}")
     public ResponseEntity<ProductDTO> updateProduct(
             @PathVariable Long id,
-            @RequestParam Long idAdmin,
-            @RequestBody ProductDTO productDTO) throws IOException {
+            @RequestParam("idAdmin") Long idAdmin,
+            @RequestParam("productDTO") String productDTOJson,
+            @RequestParam(value = "file", required = false) MultipartFile file) {
+        try {
+            // Konversi JSON ke ProductDTO
+            ObjectMapper objectMapper = new ObjectMapper();
+            ProductDTO productDTO = objectMapper.readValue(productDTOJson, ProductDTO.class);
 
-        ProductDTO updatedProduct = productService.updateProduct(id, idAdmin, productDTO)
-                .orElseThrow(() -> new RuntimeException("Product not found"));
-        return ResponseEntity.ok(updatedProduct);
+            // Jika file baru disertakan, unggah file dan perbarui URL gambar
+            if (file != null && !file.isEmpty()) {
+                String fileUrl = uploadFoto(file);
+                productDTO.setImageURL(fileUrl);
+            }
+
+            // Update produk menggunakan service
+            ProductDTO updatedProduct = productService.updateProduct(id, idAdmin, productDTO)
+                    .orElseThrow(() -> new RuntimeException("Product not found"));
+
+            return ResponseEntity.ok(updatedProduct);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
-
 
     @DeleteMapping("/delete/{id}")
     public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
@@ -69,7 +97,33 @@ public class ProductController {
             productService.deleteProduct(id);
             return ResponseEntity.ok().build();
         } catch (IOException e) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);  // Menangani IOException jika produk tidak ditemukan
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
+    }
+
+    private String uploadFoto(MultipartFile multipartFile) throws IOException {
+        RestTemplate restTemplate = new RestTemplate();
+        String base_url = "https://s3.lynk2.co/api/s3/absenMasuk";
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+
+        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+        body.add("file", new ByteArrayResource(multipartFile.getBytes()) {
+            @Override
+            public String getFilename() {
+                return multipartFile.getOriginalFilename();
+            }
+        });
+
+        HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
+        ResponseEntity<String> response = restTemplate.exchange(base_url, HttpMethod.POST, requestEntity, String.class);
+
+        return extractFileUrlFromResponse(response.getBody());
+    }
+
+    private String extractFileUrlFromResponse(String responseBody) {
+        // Contoh parsing jika respons berupa JSON
+        JSONObject json = new JSONObject(responseBody);
+        return json.getJSONObject("data").getString("url_file");
     }
 }
