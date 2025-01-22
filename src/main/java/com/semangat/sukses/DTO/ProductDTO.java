@@ -1,35 +1,15 @@
 package com.semangat.sukses.DTO;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 public class ProductDTO {
-
     private Long id;
-    private Long admin;
+    private Long adminId;  // Hanya menggunakan ID Admin
     private String name;
-    private double price;
+    private Double price;
     private String description;
     private int stock;
     private String imageURL;
 
-    @JsonCreator
-    public ProductDTO(
-            @JsonProperty("id") Long id,
-            @JsonProperty("admin") Long admin,
-            @JsonProperty("name") String name,
-            @JsonProperty("price") double price,
-            @JsonProperty("description") String description,
-            @JsonProperty("stock") int stock,
-            @JsonProperty("imageURL") String imageURL) {
-        this.id = id;
-        this.admin = admin;
-        this.name = name;
-        this.price = price;
-        this.description = description;
-        this.stock = stock;
-        this.imageURL = imageURL;
-    }
+    // Getters dan Setters untuk masing-masing field
 
     public Long getId() {
         return id;
@@ -39,12 +19,12 @@ public class ProductDTO {
         this.id = id;
     }
 
-    public Long getAdmin() {
-        return admin;
+    public Long getAdminId() {
+        return adminId;
     }
 
-    public void setAdmin(Long admin) {
-        this.admin = admin;
+    public void setAdminId(Long adminId) {
+        this.adminId = adminId;
     }
 
     public String getName() {
@@ -55,11 +35,11 @@ public class ProductDTO {
         this.name = name;
     }
 
-    public double getPrice() {
+    public Double getPrice() {
         return price;
     }
 
-    public void setPrice(double price) {
+    public void setPrice(Double price) {
         this.price = price;
     }
 

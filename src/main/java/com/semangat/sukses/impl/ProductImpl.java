@@ -1,17 +1,15 @@
 package com.semangat.sukses.impl;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.semangat.sukses.DTO.ProductDTO;
+import com.semangat.sukses.exception.NotFoundException;
 import com.semangat.sukses.model.Admin;
 import com.semangat.sukses.model.Product;
-import com.semangat.sukses.repository.ProductRepository;
 import com.semangat.sukses.repository.AdminRepository;
+import com.semangat.sukses.repository.ProductRepository;
 import com.semangat.sukses.service.ProductService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -21,72 +19,133 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
-import org.json.JSONObject;
 
 @Service
 public class ProductImpl implements ProductService {
 
     private static final String BASE_URL = "https://s3.lynk2.co/api/s3";
+    private final ProductRepository productRepository;
+    private final AdminRepository adminRepository;
+    private final RestTemplate restTemplate = new RestTemplate();
 
-    @Autowired
-    private ProductRepository productRepository;
-
-    @Autowired
-    private AdminRepository adminRepository;
-
-    @Override
-    public List<ProductDTO> getAllProducts() {
-        List<Product> products = productRepository.findAll();
-        return products.stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
+    public ProductImpl(ProductRepository productRepository, AdminRepository adminRepository) {
+        this.productRepository = productRepository;
+        this.adminRepository = adminRepository;
     }
 
     @Override
-    public List<ProductDTO> getAllProductsByAdmin(Long adminId) {
-        List<Product> products = productRepository.findByAdminId(adminId);
-        return products.stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
+    public List<Product> getAllProducts() {
+        return productRepository.findAll();
     }
 
     @Override
-    public Optional<ProductDTO> getProductById(Long id) {
-        Optional<Product> product = productRepository.findById(id);
-        return product.map(this::convertToDTO);
+    public List<Product> getAllProductsByAdmin(Long idAdmin) {
+        return productRepository.findByAdminId(idAdmin);
     }
 
     @Override
+    public Optional<Product> getProductById(Long id) {
+        return productRepository.findById(id);
+    }
+
     public ProductDTO addProduct(Long idAdmin, ProductDTO productDTO) {
-        Optional<Admin> admin = adminRepository.findById(idAdmin);
-        if (admin.isPresent()) {
-            Product product = convertToEntity(productDTO);
-            product.setAdmin(admin.get());
-            Product savedProduct = productRepository.save(product);
-            return convertToDTO(savedProduct);
+        Admin admin = adminRepository.findById(idAdmin)
+                .orElseThrow(() -> new NotFoundException("Admin not found"));
+
+        Product product = new Product();
+        product.setAdmin(admin);
+        product.setName(productDTO.getName());
+        product.setPrice(productDTO.getPrice());
+        product.setDescription(productDTO.getDescription());
+        product.setStock(productDTO.getStock());
+        product.setImageURL(productDTO.getImageURL());
+
+        Product savedProduct = productRepository.save(product);
+
+        ProductDTO result = new ProductDTO();
+        result.setId(savedProduct.getId());
+        result.setName(savedProduct.getName());
+        result.setPrice(savedProduct.getPrice());
+        result.setDescription(savedProduct.getDescription());
+        result.setStock(savedProduct.getStock());
+        result.setImageURL(savedProduct.getImageURL());
+
+        return result;
+    }
+
+
+    @Override
+    public ProductDTO updateProduct(Long id, Long idAdmin,ProductDTO productDTO) throws IOException {
+       Product existingProduct = productRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Product tidak ditemukan"));
+
+        Admin admin = adminRepository.findById(idAdmin)
+                .orElseThrow(() -> new NotFoundException("Admin dengan ID " + idAdmin + " tidak ditemukan"));
+
+        existingProduct.setAdmin(admin);
+        existingProduct.setName(productDTO.getName());
+        existingProduct.setPrice(productDTO.getPrice());
+        existingProduct.setDescription(productDTO.getDescription());
+        existingProduct.setStock(productDTO.getStock());
+
+        Product updatedProduct = productRepository.save(existingProduct);
+
+        ProductDTO result = new ProductDTO();
+        result.setId(updatedProduct.getId());
+        result.setName(updatedProduct.getName());
+        result.setPrice(updatedProduct.getPrice());
+        result.setDescription(updatedProduct.getDescription());
+        result.setStock(updatedProduct.getStock());
+
+        return result;
+    }
+
+    @Override
+    public String uploadFoto(MultipartFile file) throws IOException {
+        String uploadUrl = BASE_URL + "/uploadFoto";
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+
+        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+        body.add("file", file.getResource());
+
+        HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
+
+        ResponseEntity<String> response = restTemplate.exchange(uploadUrl, HttpMethod.POST, requestEntity, String.class);
+
+        if (response.getStatusCode() == HttpStatus.OK) {
+            return extractFileUrlFromResponse(response.getBody());
         } else {
-            throw new RuntimeException("Admin not found with ID: " + idAdmin);
+            throw new IOException("Failed to upload file: " + response.getStatusCode());
         }
     }
 
     @Override
-    public Optional<ProductDTO> updateProduct(Long id, Long adminId, ProductDTO productDTO) throws IOException {
-        if (productRepository.existsById(id)) {
-            Optional<Admin> admin = adminRepository.findById(adminId);
-            if (admin.isPresent()) {
-                Product product = convertToEntity(productDTO);
-                product.setId(id);
-                product.setAdmin(admin.get());
+    public String editUploadFoto(Long id, MultipartFile file) throws IOException {
+        String editUrl = BASE_URL + "/editUploadFoto";
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
 
-                Product updatedProduct = productRepository.save(product);
-                return Optional.of(convertToDTO(updatedProduct));
-            } else {
-                throw new IOException("Admin tidak ditemukan dengan ID: " + adminId);
-            }
+        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+        body.add("file", file.getResource());
+        body.add("fileId", id.toString());
+
+        HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
+
+        ResponseEntity<String> response = restTemplate.exchange(editUrl, HttpMethod.PUT, requestEntity, String.class);
+
+        if (response.getStatusCode() == HttpStatus.OK) {
+            return extractFileUrlFromResponse(response.getBody());
         } else {
-            throw new IOException("Produk tidak ditemukan dengan ID: " + id);
+            throw new IOException("Failed to update file: " + response.getStatusCode());
         }
+    }
+
+    private String extractFileUrlFromResponse(String responseBody) throws IOException {
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode jsonResponse = mapper.readTree(responseBody);
+        JsonNode dataNode = jsonResponse.path("data");
+        return dataNode.path("url_file").asText();
     }
 
     @Override
@@ -95,55 +154,6 @@ public class ProductImpl implements ProductService {
             productRepository.deleteById(id);
         } else {
             throw new IOException("Product not found with ID: " + id);
-        }
-    }
-
-    public String uploadFoto(MultipartFile multipartFile) throws IOException {
-        RestTemplate restTemplate = new RestTemplate();
-        String base_url = BASE_URL + "/absenMasuk";
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
-        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-        body.add("file", multipartFile.getResource());
-
-        HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
-        ResponseEntity<String> response = restTemplate.exchange(base_url, HttpMethod.POST, requestEntity, String.class);
-
-        return extractFileUrlFromResponse(response.getBody());
-    }
-
-    private String extractFileUrlFromResponse(String responseBody) {
-        // Contoh parsing jika respons berupa JSON
-        JSONObject json = new JSONObject(responseBody);
-        return json.getJSONObject("data").getString("url_file");
-    }
-
-    private ProductDTO convertToDTO(Product product) {
-        return new ProductDTO(
-                product.getId(),
-                product.getAdmin().getId(),
-                product.getName(),
-                product.getPrice(),
-                product.getDescription(),
-                product.getStock(),
-                product.getImageURL()
-        );
-    }
-
-    private Product convertToEntity(ProductDTO productDTO) {
-        Optional<Admin> admin = adminRepository.findById(productDTO.getAdmin());
-        if (admin.isPresent()) {
-            return new Product(
-                    productDTO.getId(),
-                    admin.get(),
-                    productDTO.getName(),
-                    productDTO.getPrice(),
-                    productDTO.getDescription(),
-                    productDTO.getStock(),
-                    productDTO.getImageURL()
-            );
-        } else {
-            throw new RuntimeException("Admin not found with ID: " + productDTO.getAdmin());
         }
     }
 }

@@ -17,11 +17,11 @@ public class Product {
     @Column(name = "name")
     private String name;
 
-    @Column(name = "description")
-    private String description;
-
     @Column(name = "price")
     private double price;
+
+    @Column(name = "description")
+    private String description;
 
     @Column(name = "stock")
     private int stock;
@@ -29,8 +29,11 @@ public class Product {
     @Column(name = "image_url")
     private String imageURL;
 
-    public Product() {}
+    // Default constructor
+    public Product() {
+    }
 
+    // Constructor with fields
     public Product(Long id, Admin admin, String name, double price, String description, int stock, String imageURL) {
         this.id = id;
         this.admin = admin;
@@ -41,6 +44,7 @@ public class Product {
         this.imageURL = imageURL;
     }
 
+    // Getters and setters
     public Long getId() {
         return id;
     }
@@ -65,20 +69,20 @@ public class Product {
         this.name = name;
     }
 
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
     public double getPrice() {
         return price;
     }
 
     public void setPrice(double price) {
         this.price = price;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public int getStock() {
